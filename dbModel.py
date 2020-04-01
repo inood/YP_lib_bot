@@ -22,6 +22,7 @@ class Category(BaseModel):
         db_table = "Category"
         order_by = ('id',)
 
+
 class Library(BaseModel):
     id = PrimaryKeyField(null=False)
     name = TextField()
@@ -49,6 +50,7 @@ def add_to_lib(name, url, category):
             category=category
         )
         row.save()
+
 
 if __name__ == '__main__':
     try:
