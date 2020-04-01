@@ -85,10 +85,13 @@ def add_to_lib(name, url, category):
 #         row.save()
 
 # :TODO Этим тестил
+
+# Искать можно по MATCH '<word1> AND <WORD2> OR <word3>'
+
 # SELECT Library.name,Library.url, Library.category_id
 # FROM Library
 # JOIN FTSLibrary ON Library.id = ftslibrary.docid
-# WHERE ftslibrary MATCH 'new'
+# WHERE ftslibrary MATCH 'new item'
 
 # dbModel.add_to_lib('Newless one sites','newy irls',1)
 # dbModel.add_to_lib('New less one sites','newy irls',1)
