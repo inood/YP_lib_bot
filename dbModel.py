@@ -1,12 +1,14 @@
 # _*_ coding: utf-8 _*_
 # jetDm code
 from peewee import *
+from playhouse.sqlite_ext import *
 import peewee
 import datetime
 
-lib_db = SqliteDatabase('db/Lib.db', pragmas={
+# Подключение к БД с учетом расширения FTS
+lib_db = SqliteExtDatabase('db/Lib.db', pragmas={
     'journal_mode': 'wal',
-    'cache_size': -1024 * 64})
+    'cache_size': -1024 * 32})
 
 
 class BaseModel(Model):
@@ -36,26 +38,70 @@ class Library(BaseModel):
         order_by = ('id',)
 
 
+# Дополнительная модель Таблицы для полнотекстового поиска в Функции add_to_lib запись добавляется с учетом этой таблицы
+class FTSLibrary(FTSModel):
+    name = TextField()
+
+    class Meta:
+        database = lib_db
+
+
+# Добавление категории
+# :TODO переделать надо
+def add_category(name):
+    row = Category(
+        name=name.lower().strip(),
+    )
+    row.save()
+
+
+# функция добавления записи в библиотеку
 def add_to_lib(name, url, category):
-    cat_exist = True
-    try:
-        category = Library.select().where(Library.name == name.strip()).get()
-    except DoesNotExist as de:
-        cat_exist = False
+    library = Library.create(
+        name=name,
+        url=url,
+        category=category
+    )
+    FTSLibrary.create(
+        docid=library.id,
+        name='\n'.join((library.name, library.url))
+    )
 
-    if cat_exist:
-        row = Library(
-            name=name.lower().strip(),
-            url=url,
-            category=category
-        )
-        row.save()
 
+# :TODO переделать надо
+# def add_to_lib(name, url, category):
+#     cat_exist = True
+#     try:
+#         category = Library.select().where(Library.name == name.strip()).get()
+#     except DoesNotExist as de:
+#         cat_exist = False
+#
+#     if cat_exist:
+#         row = Library(
+#             name=name.lower().strip(),
+#             url=url,
+#             category=category
+#         )
+#         row.save()
+
+# :TODO Этим тестил
+# SELECT Library.name,Library.url, Library.category_id
+# FROM Library
+# JOIN FTSLibrary ON Library.id = ftslibrary.docid
+# WHERE ftslibrary MATCH 'new'
+
+# dbModel.add_to_lib('Newless one sites','newy irls',1)
+# dbModel.add_to_lib('New less one sites','newy irls',1)
+# dbModel.add_to_lib('new less one sites','newy irls',1)
+# dbModel.add_to_lib('new2 less ones sits','new ssy irls',1)
+# dbModel.add_to_lib('newcc lesees ones sits','new1 ssy irls',1)
+# dbModel.add_to_lib('newcc lesees onesssss sits','new ssy irls',1)
 
 if __name__ == '__main__':
     try:
         lib_db.connect()
         Library.create_table()
+        FTSLibrary.create_table()
     except peewee.InternalError as px:
         print(str(px))
     try:
